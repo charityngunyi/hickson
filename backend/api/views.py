@@ -1,13 +1,18 @@
 from django.shortcuts import render
-from rest_framework.generics import (ListAPIView, CreateAPIView, RetrieveUpdateDestroyAPIView, RetrieveAPIView)
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.generics import (ListAPIView, CreateAPIView, RetrieveUpdateDestroyAPIView, RetrieveAPIView, RetrieveUpdateAPIView)
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from offices.models import Category, Office, BidOffice, Amenities, Text, File, Image, Video
 from users.models import CustomUser
 from .serializers import CategorySerializer, OfficeSerializer, BidOfficeSerializer, AmenitiesSerializer, ProfileUpdateSerializer
 from .serializers import TextSerializer, FileSerializer, ImageSerializer, VideoSerializer, ProfileSerializer
+from .serializers import CustomUserUpdateSerializer, CustomUserSerializer
 from .permissions import IsOwnerOrReadOnly, IsAdminOrReadOnly, IsSeekerOrReadOnly, IsUserOrReadOnly, IsCustomUserOrReadOnly
 # Create your views here.
 from rest_framework.parsers import MultiPartParser, FormParser
+from django.contrib.auth.hashers import make_password
+from rest_framework import status
+from rest_framework.response import Response
+
 # 
 class CategoryListAPIView(ListAPIView):
     queryset = Category.objects.all()
@@ -198,7 +203,6 @@ class ProfileListAPIView(ListAPIView):
 # Create 
 class ProfileCreateAPIView(CreateAPIView):
     queryset = CustomUser.objects.all()
-    permission_classes = (IsAuthenticated,)
     serializer_class = ProfileSerializer
     parser_classes = (MultiPartParser, FormParser)
 
@@ -208,4 +212,37 @@ class ProfileRetrieveUpdateDestroyAPIView(RetrieveUpdateDestroyAPIView):
     queryset = CustomUser.objects.all()
     permission_classes = (IsCustomUserOrReadOnly,)
     serializer_class = ProfileUpdateSerializer
+    parser_classes = (MultiPartParser, FormParser)
+
+
+
+class CustomUserCreateView(CreateAPIView):
+    queryset = CustomUser.objects.all()
+    serializer_class = CustomUserSerializer
+    permission_classes = [AllowAny]
+    parser_classes = (MultiPartParser, FormParser)
+
+    def create(self, request, *args, **kwargs):
+        # Ensure that 'confirm_password' is removed from the request data
+        request_data = request.data.copy()
+        request_data.pop('confirm_password', None)
+
+        serializer = self.get_serializer(data=request_data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
+
+    def perform_create(self, serializer):
+        # Hash the password before saving
+        serializer.validated_data['password'] = make_password(serializer.validated_data['password'])
+        serializer.save()
+
+
+# update user
+class CustomUserUpdateView(RetrieveUpdateAPIView):
+    queryset = CustomUser.objects.all()
+    serializer_class = CustomUserUpdateSerializer
+    permission_classes = [IsCustomUserOrReadOnly]
     parser_classes = (MultiPartParser, FormParser)

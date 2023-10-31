@@ -10,7 +10,7 @@ from .views import (
     ImageListAPIView, ImageCreateAPIView, ImageRetrieveUpdateDestroyAPIView,
     VideoListAPIView, VideoCreateAPIView, VideoRetrieveUpdateDestroyAPIView,
     ProfileListAPIView, ProfileCreateAPIView, ProfileRetrieveUpdateDestroyAPIView,
-    CategoryDetailAPIView, OfficeDetailAPIView
+    CategoryDetailAPIView, OfficeDetailAPIView, CustomUserCreateView, CustomUserUpdateView
 )
 
 urlpatterns = [
@@ -178,5 +178,17 @@ path(
     route='profile/<int:pk>/',
     view=ProfileRetrieveUpdateDestroyAPIView.as_view(),
     name='profile_edit_delete'
+    ),
+# user create
+path(
+    route='profile/user/create',
+    view=CustomUserCreateView.as_view(),
+    name='user_create'
+    ),
+# update
+path(
+    route='profile/user/update/<int:pk>/',
+    view=CustomUserUpdateView.as_view(),
+    name='user_update'
     ),
 ]
